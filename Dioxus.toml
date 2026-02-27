@@ -1,0 +1,19 @@
+[application]
+name = "Wraith"
+default_platform = "mobile"
+asset_dir = "assets"
+
+[application.android]
+# Android-specific configuration
+min_sdk_version = 24
+target_sdk_version = 34
+
+[web.app]
+title = "Wraith — Secure Messenger"
+
+[web.watcher]
+reload_html = true
+
+[bundle]
+identifier = "com.wraith.messenger"
+publisher = "Wraith"
