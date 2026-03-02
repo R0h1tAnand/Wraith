@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Represents a contact in the user's contact list.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Contact {
     /// Unique identifier (UUID v4)
     pub id: String,

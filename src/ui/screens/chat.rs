@@ -87,7 +87,7 @@ pub fn Chat(contact_id: String) -> Element {
                         border-radius: 12px;
                         transition: background 150ms ease;
                     ",
-                    onclick: move |_| nav.push(Route::Home {}),
+                    onclick: move |_| { nav.push(Route::Home {}); },
                     "←"
                 }
 

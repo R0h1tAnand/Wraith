@@ -30,19 +30,19 @@ pub fn BottomNav(active_tab: Option<String>) -> Element {
                 icon: "💬",
                 label: "Chats",
                 active: current == "chats",
-                on_click: move |_| nav.push(Route::Home {}),
+                on_click: move |_| { nav.push(Route::Home {}); },
             }
             NavTab {
                 icon: "👤",
                 label: "Profile",
                 active: current == "profile",
-                on_click: move |_| nav.push(Route::Profile {}),
+                on_click: move |_| { nav.push(Route::Profile {}); },
             }
             NavTab {
                 icon: "⚙️",
                 label: "Settings",
                 active: current == "settings",
-                on_click: move |_| nav.push(Route::Settings {}),
+                on_click: move |_| { nav.push(Route::Settings {}); },
             }
         }
     }
@@ -56,6 +56,7 @@ fn NavTab(
     on_click: EventHandler<()>,
 ) -> Element {
     let color = if active { DARK.accent_primary } else { DARK.text_secondary };
+    let weight = if active { "600" } else { "500" };
 
     rsx! {
         button {
@@ -76,7 +77,7 @@ fn NavTab(
             span {
                 style: "
                     font-size: 11px;
-                    font-weight: {if active { "600" } else { "500" }};
+                    font-weight: {weight};
                     color: {color};
                 ",
                 "{label}"

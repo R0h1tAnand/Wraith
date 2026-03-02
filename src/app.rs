@@ -35,8 +35,66 @@ pub enum Route {
 /// Provides global state via context and renders the router.
 #[component]
 pub fn App() -> Element {
-    // Provide AppState as a global context signal
-    let _state = use_context_provider(|| Signal::new(AppState::new()));
+    let mut state = use_context_provider(|| Signal::new(AppState::new()));
+    let mut state_clone = state;
+
+    // Initialize storage asynchronously on startup
+    use_coroutine(move |_rx: UnboundedReceiver<()>| async move {
+        // Find a sensible data directory across platforms
+        let data_dir = dirs::data_local_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("wraith_db");
+
+        // Ensure the directory exists
+        if let Err(e) = std::fs::create_dir_all(&data_dir) {
+            tracing::error!("Failed to create data directory: {}", e);
+        }
+
+        match crate::core::storage::AppStorage::open(data_dir) {
+            Ok(storage) => {
+                let arc_storage = std::sync::Arc::new(storage);
+                
+                // Load saved data into state
+                let mut contacts = Vec::new();
+                let mut messages = std::collections::HashMap::new();
+                let mut identity = None;
+                
+                if let Ok(loaded_contacts) = arc_storage.load_all_contacts() {
+                    contacts = loaded_contacts;
+                }
+                
+                // Load messages for each contact we have
+                for contact in &contacts {
+                    if let Ok(loaded_msgs) = arc_storage.load_thread_messages(&contact.public_key) {
+                        messages.insert(contact.public_key.clone(), loaded_msgs);
+                    }
+                }
+                
+                if let Ok(loaded_identity) = crate::core::identity::Identity::load_from_storage(arc_storage.db()) {
+                    identity = loaded_identity;
+                }
+
+                // Update the state all at once
+                state_clone.with_mut(|s| {
+                    s.storage = Some(arc_storage);
+                    s.contacts = contacts;
+                    s.messages = messages;
+                    s.identity = identity;
+                    s.is_loading = false;
+                    // If we have an identity, assume onboarded for now
+                    if s.identity.is_some() {
+                        s.onboarded = true;
+                    }
+                });
+                tracing::info!("Storage initialized successfully");
+            }
+            Err(e) => {
+                tracing::error!("Failed to open storage: {:?}", e);
+                // Even on error, we stop loading so the UI can show an error or fallback
+                state_clone.with_mut(|s| s.is_loading = false);
+            }
+        }
+    });
 
     rsx! {
         style { {include_str!("../assets/global.css")} }

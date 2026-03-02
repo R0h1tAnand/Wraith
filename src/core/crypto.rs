@@ -83,7 +83,7 @@ impl RatchetSession {
 
         // Generate a random nonce
         let mut nonce_bytes = [0u8; 12];
-        rand::rng().fill_bytes(&mut nonce_bytes);
+        rand::thread_rng().fill_bytes(&mut nonce_bytes);
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         // Encrypt with ChaCha20-Poly1305

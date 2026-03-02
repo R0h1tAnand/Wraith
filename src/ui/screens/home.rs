@@ -69,7 +69,7 @@ pub fn Home() -> Element {
                         border-radius: 12px;
                         transition: background 150ms ease;
                     ",
-                    onclick: move |_| nav.push(Route::Profile {}),
+                    onclick: move |_| { nav.push(Route::Profile {}); },
                     "≡"
                 }
 
@@ -96,7 +96,7 @@ pub fn Home() -> Element {
                         border-radius: 12px;
                         transition: background 150ms ease;
                     ",
-                    onclick: move |_| nav.push(Route::NewChat {}),
+                    onclick: move |_| { nav.push(Route::NewChat {}); },
                     "✏️"
                 }
             }
@@ -190,7 +190,7 @@ pub fn Home() -> Element {
                         button {
                             class: "btn-primary",
                             style: "width: auto; padding: 12px 32px;",
-                            onclick: move |_| nav.push(Route::NewChat {}),
+                            onclick: move |_| { nav.push(Route::NewChat {}); },
                             "＋ New Conversation"
                         }
                     }
@@ -230,19 +230,19 @@ fn BottomNav() -> Element {
                 icon: "💬",
                 label: "Chats",
                 active: true,
-                on_click: move |_| nav.push(Route::Home {}),
+                on_click: move |_| { nav.push(Route::Home {}); },
             }
             NavButton {
                 icon: "👤",
                 label: "Profile",
                 active: false,
-                on_click: move |_| nav.push(Route::Profile {}),
+                on_click: move |_| { nav.push(Route::Profile {}); },
             }
             NavButton {
                 icon: "⚙️",
                 label: "Settings",
                 active: false,
-                on_click: move |_| nav.push(Route::Settings {}),
+                on_click: move |_| { nav.push(Route::Settings {}); },
             }
         }
     }

@@ -63,14 +63,14 @@ pub fn Splash() -> Element {
                     xmlns: "http://www.w3.org/2000/svg",
 
                     defs {
-                        linear_gradient {
+                        linearGradient {
                             id: "ghostGrad",
                             x1: "20",
                             y1: "10",
                             x2: "60",
                             y2: "75",
-                            stop { offset: "0%", stop_color: "#9B8AFF" }
-                            stop { offset: "100%", stop_color: "#7C6AF7" }
+                            stop { offset: "0%", "stop-color": "#9B8AFF" }
+                            stop { offset: "100%", "stop-color": "#7C6AF7" }
                         }
                     }
                     path {

@@ -9,6 +9,10 @@ pub fn InputBar(
     on_send: EventHandler<()>,
 ) -> Element {
     let can_send = !value.trim().is_empty();
+    let text_color = if can_send { "#FFFFFF" } else { DARK.text_tertiary };
+    let bg_color = if can_send { DARK.accent_primary } else { DARK.bg_tertiary };
+    let cursor_style = if can_send { "pointer" } else { "default" };
+    let transform = if can_send { "scale(1)" } else { "scale(0.9)" };
 
     rsx! {
         div {
@@ -68,17 +72,17 @@ pub fn InputBar(
                     width: 40px;
                     height: 40px;
                     border-radius: 50%;
-                    background: {if can_send { DARK.accent_primary } else { DARK.bg_tertiary }};
+                    background: {bg_color};
                     border: none;
-                    color: {if can_send { "#FFFFFF" } else { DARK.text_tertiary }};
+                    color: {text_color};
                     font-size: 16px;
-                    cursor: {if can_send { "pointer" } else { "default" }};
+                    cursor: {cursor_style};
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     flex-shrink: 0;
                     transition: all 150ms ease;
-                    transform: {if can_send { "scale(1)" } else { "scale(0.9)" }};
+                    transform: {transform};
                 ",
                 disabled: !can_send,
                 onclick: move |_| {
@@ -86,7 +90,7 @@ pub fn InputBar(
                         on_send.call(());
                     }
                 },
-                "➤"
+                "Send"
             }
         }
     }

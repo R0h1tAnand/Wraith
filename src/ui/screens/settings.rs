@@ -41,7 +41,7 @@ pub fn Settings() -> Element {
                         cursor: pointer;
                         padding: 8px;
                     ",
-                    onclick: move |_| nav.push(Route::Home {}),
+                    onclick: move |_| { nav.push(Route::Home {}); },
                     "←"
                 }
 
@@ -270,6 +270,9 @@ fn SettingsItem(
     has_toggle: bool,
     enabled: bool,
 ) -> Element {
+    let bg_color = if enabled { DARK.accent_primary } else { DARK.bg_tertiary };
+    let toggle_left = if enabled { "22px" } else { "2px" };
+
     rsx! {
         div {
             style: "
@@ -316,7 +319,7 @@ fn SettingsItem(
                         width: 44px;
                         height: 24px;
                         border-radius: 12px;
-                        background: {if enabled { DARK.accent_primary } else { DARK.bg_tertiary }};
+                        background: {bg_color};
                         position: relative;
                         transition: background 200ms ease;
                         flex-shrink: 0;
@@ -329,7 +332,7 @@ fn SettingsItem(
                             background: white;
                             position: absolute;
                             top: 2px;
-                            left: {if enabled { "22px" } else { "2px" }};
+                            left: {toggle_left};
                             transition: left 200ms ease;
                         ",
                     }

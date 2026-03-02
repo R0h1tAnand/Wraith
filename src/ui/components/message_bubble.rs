@@ -34,6 +34,7 @@ pub fn MessageBubble(
         _ => if is_sent { "rgba(255,255,255,0.5)" } else { DARK.text_tertiary },
     };
 
+    let ts_color = if is_sent { "rgba(255,255,255,0.5)" } else { DARK.text_tertiary };
     let delay = index * 30;
 
     rsx! {
@@ -78,7 +79,7 @@ pub fn MessageBubble(
                     span {
                         style: "
                             font-size: 11px;
-                            color: {if is_sent { "rgba(255,255,255,0.5)" } else { DARK.text_tertiary }};
+                            color: {ts_color};
                         ",
                         "{timestamp}"
                     }

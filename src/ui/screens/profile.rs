@@ -51,7 +51,7 @@ pub fn Profile() -> Element {
                         cursor: pointer;
                         padding: 8px;
                     ",
-                    onclick: move |_| nav.push(Route::Home {}),
+                    onclick: move |_| { nav.push(Route::Home {}); },
                     "←"
                 }
 

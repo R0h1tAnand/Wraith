@@ -20,6 +20,8 @@ pub struct AppState {
     pub messages: HashMap<String, Vec<Message>>,
     /// Local user identity (None until generated/loaded)
     pub identity: Option<Identity>,
+    /// Persistent storage engine
+    pub storage: Option<std::sync::Arc<crate::core::storage::AppStorage>>,
     /// Whether the app is loading
     pub is_loading: bool,
     /// Whether the user has completed onboarding
@@ -37,6 +39,7 @@ impl AppState {
             active_thread: None,
             messages: HashMap::new(),
             identity: None,
+            storage: None,
             is_loading: true,
             onboarded: false,
             search_query: String::new(),
