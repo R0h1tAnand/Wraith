@@ -50,6 +50,7 @@ pub fn Avatar(pubkey: String, size: u32) -> Element {
                 for col in 0..5 {
                     if grid[row][col] {
                         rect {
+                            key: "{row}-{col}",
                             x: "{offset + col as f32 * cell_size}",
                             y: "{offset + row as f32 * cell_size}",
                             width: "{cell_size}",
