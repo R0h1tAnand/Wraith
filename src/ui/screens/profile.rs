@@ -9,9 +9,12 @@ use crate::ui::components::qr_code::QrCode;
 /// Profile screen — view and share your identity.
 #[component]
 pub fn Profile() -> Element {
-    let state = use_context::<Signal<AppState>>();
+    let mut state = use_context::<Signal<AppState>>();
     let nav = use_navigator();
     let mut copied = use_signal(|| false);
+    let mut backup_copied = use_signal(|| false);
+    let mut show_reset_modal = use_signal(|| false);
+    let mut backup_data = use_signal(|| String::new());
 
     let (public_key, short_key) = {
         let s = state.read();
@@ -176,6 +179,7 @@ pub fn Profile() -> Element {
                         background: {DARK.bg_secondary};
                         border: 1px solid {DARK.border_subtle};
                         border-radius: 16px;
+                        margin-bottom: 32px;
                     ",
 
                     QrCode { data: public_key.clone(), size: 200 }
@@ -188,6 +192,137 @@ pub fn Profile() -> Element {
                             text-align: center;
                         ",
                         "Others can scan this to message you"
+                    }
+                }
+
+                // Danger Zone - Reset Profile
+                div {
+                    style: "
+                        width: 100%;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        padding: 24px;
+                        background: rgba(248, 113, 113, 0.05);
+                        border: 1px solid rgba(248, 113, 113, 0.2);
+                        border-radius: 16px;
+                        text-align: center;
+                    ",
+                    h3 {
+                        style: "
+                            color: #F87171;
+                            font-size: 16px;
+                            margin-bottom: 8px;
+                            font-weight: 600;
+                        ",
+                        "Danger Zone"
+                    }
+                    p {
+                        style: "
+                            font-size: 13px;
+                            color: {DARK.text_secondary};
+                            margin-bottom: 16px;
+                            max-width: 250px;
+                        ",
+                        "Permanently delete your identity, contacts, and all messages from this device."
+                    }
+                    
+                    button {
+                        style: "
+                            background: rgba(248, 113, 113, 0.1);
+                            color: #F87171;
+                            border: 1px solid rgba(248, 113, 113, 0.3);
+                            padding: 12px 24px;
+                            border-radius: 12px;
+                            font-weight: 600;
+                            font-size: 14px;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                        ",
+                        onclick: move |_| {
+                            let backup = crate::state::actions::action_backup_chats(&state);
+                            backup_data.set(backup);
+                            show_reset_modal.set(true);
+                        },
+                        "Reset Profile"
+                    }
+                }
+                
+                // Reset Modal
+                if *show_reset_modal.read() {
+                    div {
+                        style: "
+                            position: fixed;
+                            top: 0; left: 0; right: 0; bottom: 0;
+                            background: rgba(0, 0, 0, 0.8);
+                            backdrop-filter: blur(8px);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            padding: 24px;
+                            z-index: 100;
+                        ",
+                        div {
+                            style: "
+                                background: {DARK.bg_primary};
+                                border: 1px solid {DARK.border_subtle};
+                                border-radius: 20px;
+                                padding: 24px;
+                                width: 100%;
+                                max-width: 400px;
+                                display: flex;
+                                flex-direction: column;
+                                animation: {presets::scale_in()};
+                            ",
+                            h3 { style: "color: #F87171; margin-bottom: 12px; font-size: 20px; text-align: center;", "Final Warning" }
+                            p {
+                                style: "color: {DARK.text_secondary}; font-size: 14px; margin-bottom: 24px; text-align: center; line-height: 1.5;",
+                                "You are about to permanently delete your Wraith identity. Your contacts and messages will be wiped."
+                            }
+                            
+                            p { style: "color: {DARK.text_primary}; font-size: 12px; font-weight: 600; margin-bottom: 8px;", "Chat Backup (Save this!)" }
+                            textarea {
+                                readonly: true,
+                                style: "
+                                    width: 100%;
+                                    height: 120px;
+                                    background: {DARK.bg_secondary};
+                                    border: 1px solid {DARK.border_subtle};
+                                    border-radius: 8px;
+                                    padding: 12px;
+                                    color: {DARK.text_secondary};
+                                    font-family: monospace;
+                                    font-size: 11px;
+                                    resize: none;
+                                    margin-bottom: 16px;
+                                ",
+                                "{backup_data}"
+                            }
+                            
+                            button {
+                                class: "btn-secondary",
+                                style: "margin-bottom: 24px;",
+                                onclick: move |_| backup_copied.set(true),
+                                if *backup_copied.read() { "✓ Backup Copied to Clipboard" } else { "📋 Copy JSON Backup" }
+                            }
+                            
+                            div {
+                                style: "display: flex; gap: 12px;",
+                                button {
+                                    style: "flex: 1; padding: 12px; border-radius: 12px; border: 1px solid {DARK.border_subtle}; background: transparent; color: {DARK.text_primary}; cursor: pointer;",
+                                    onclick: move |_| show_reset_modal.set(false),
+                                    "Cancel"
+                                }
+                                button {
+                                    style: "flex: 1; padding: 12px; border-radius: 12px; border: none; background: #DC2626; color: white; cursor: pointer; font-weight: 600;",
+                                    onclick: move |_| {
+                                        crate::state::actions::action_reset_profile(&mut state);
+                                        nav.replace(crate::app::Route::Onboarding {});
+                                    },
+                                    "Delete Everything"
+                                }
+                            }
+                        }
                     }
                 }
             }

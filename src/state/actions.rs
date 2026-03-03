@@ -9,6 +9,14 @@ use super::app_state::AppState;
 pub fn action_generate_identity(state: &mut Signal<AppState>) {
     let identity = Identity::generate();
     let mut s = state.write();
+    
+    // Save to database if storage is available
+    if let Some(storage) = &s.storage {
+        if let Err(e) = identity.save_to_storage(storage.db()) {
+            tracing::error!("Failed to save new identity to storage: {:?}", e);
+        }
+    }
+    
     s.identity = Some(identity);
     s.onboarded = true;
     s.is_loading = false;
@@ -109,4 +117,34 @@ pub fn action_set_active_thread(state: &mut Signal<AppState>, contact_id: Option
 /// Set search query.
 pub fn action_set_search(state: &mut Signal<AppState>, query: String) {
     state.write().search_query = query;
+}
+
+/// Backup all chats into a JSON string.
+pub fn action_backup_chats(state: &Signal<AppState>) -> String {
+    let s = state.read();
+    match serde_json::to_string_pretty(&s.messages) {
+        Ok(json) => json,
+        Err(e) => {
+            tracing::error!("Failed to serialize messages for backup: {:?}", e);
+            String::from("Error creating backup.")
+        }
+    }
+}
+
+/// Hard reset the entire profile and delete all data.
+pub fn action_reset_profile(state: &mut Signal<AppState>) {
+    let mut s = state.write();
+    
+    if let Some(storage) = &s.storage {
+        if let Err(e) = storage.wipe_all() {
+            tracing::error!("Failed to wipe storage: {:?}", e);
+        }
+    }
+    
+    s.contacts.clear();
+    s.messages.clear();
+    s.active_thread = None;
+    s.identity = None;
+    s.onboarded = false;
+    // Don't reset tor_status or tor_client, keep connections alive.
 }
