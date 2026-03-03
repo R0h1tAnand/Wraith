@@ -95,6 +95,24 @@ pub fn App() -> Element {
             }
         }
     });
+    // Simulate Tor Connection Process
+    let mut tor_state = state;
+    use_coroutine(move |_rx: UnboundedReceiver<()>| async move {
+        // Start by showing disconnected
+        tor_state.with_mut(|s| s.tor_status = crate::core::types::TorStatus::Disconnected);
+        
+        #[cfg(not(target_family = "wasm"))]
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        
+        // Move to connecting state
+        tor_state.with_mut(|s| s.tor_status = crate::core::types::TorStatus::Connecting);
+        
+        #[cfg(not(target_family = "wasm"))]
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        
+        // Finally connected
+        tor_state.with_mut(|s| s.tor_status = crate::core::types::TorStatus::Connected);
+    });
 
     rsx! {
         style { {include_str!("../assets/global.css")} }
