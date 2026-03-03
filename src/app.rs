@@ -95,23 +95,24 @@ pub fn App() -> Element {
             }
         }
     });
-    // Simulate Tor Connection Process
+    // Initialize Tor Connection Process
     let mut tor_state = state;
     use_coroutine(move |_rx: UnboundedReceiver<()>| async move {
-        // Start by showing disconnected
-        tor_state.with_mut(|s| s.tor_status = crate::core::types::TorStatus::Disconnected);
-        
-        #[cfg(not(target_family = "wasm"))]
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        
-        // Move to connecting state
+        // Start by showing connecting
         tor_state.with_mut(|s| s.tor_status = crate::core::types::TorStatus::Connecting);
         
-        #[cfg(not(target_family = "wasm"))]
-        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-        
-        // Finally connected
-        tor_state.with_mut(|s| s.tor_status = crate::core::types::TorStatus::Connected);
+        match crate::core::tor::init_tor_client().await {
+            Ok(client) => {
+                tor_state.with_mut(|s| {
+                    s.tor_client = Some(client);
+                    s.tor_status = crate::core::types::TorStatus::Connected;
+                });
+            }
+            Err(e) => {
+                tracing::error!("Failed to initialize Tor client: {:?}", e);
+                tor_state.with_mut(|s| s.tor_status = crate::core::types::TorStatus::Disconnected);
+            }
+        }
     });
 
     rsx! {

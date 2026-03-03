@@ -12,6 +12,8 @@ use crate::core::identity::Identity;
 pub struct AppState {
     /// Current Tor network status
     pub tor_status: TorStatus,
+    /// Tor Client instance
+    pub tor_client: Option<crate::core::tor::AppTorClient>,
     /// All contacts
     pub contacts: Vec<Contact>,
     /// Currently active chat thread contact ID
@@ -35,6 +37,7 @@ impl AppState {
     pub fn new() -> Self {
         Self {
             tor_status: TorStatus::Disconnected,
+            tor_client: None,
             contacts: Vec::new(),
             active_thread: None,
             messages: HashMap::new(),

@@ -21,6 +21,10 @@ rand = "0.8"
 base64 = "0.22"
 hex = "0.4"
 
+# Tor Network
+arti-client = { version = "0.27", default-features = false, features = ["tokio", "rustls"] }
+tor-rtcompat = { version = "0.27", default-features = false, features = ["tokio", "rustls"] }
+
 # Storage
 sled = "0.34"
 serde = { version = "1", features = ["derive"] }
