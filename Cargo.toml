@@ -40,3 +40,13 @@ dirs = "6.0.0"
 opt-level = 3
 lto = true
 strip = true
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"
