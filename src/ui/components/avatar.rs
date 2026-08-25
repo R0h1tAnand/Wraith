@@ -1,66 +1,117 @@
 use dioxus::prelude::*;
-use sha2::{Digest, Sha256};
 use crate::ui::theme::DARK;
 
-/// Deterministic identicon avatar generated from a public key.
+/// Deterministic avatar identicon with gradient glow ring.
 ///
-/// Creates a 5×5 symmetric grid pattern with colors derived from the key hash.
+/// Generates a unique visual fingerprint from the public key hash,
+/// wrapped in a luminous gradient ring.
 #[component]
-pub fn Avatar(pubkey: String, size: u32) -> Element {
-    let hash = Sha256::digest(pubkey.as_bytes());
-
-    // Derive color from first 3 bytes
-    let hue = (hash[0] as u16 * 360 / 255) as u16;
-    let sat = 50 + (hash[1] % 30) as u16;
-    let light = 55 + (hash[2] % 15) as u16;
-    let color = format!("hsl({}, {}%, {}%)", hue, sat, light);
-    let bg_color = format!("hsl({}, {}%, {}%)", hue, sat / 3, light / 4);
-
-    // Generate 5×5 grid (mirrored left-right for symmetry)
-    let mut grid = [[false; 5]; 5];
-    for row in 0..5 {
-        for col in 0..3 {
-            let byte_idx = 3 + row * 3 + col;
-            let active = hash[byte_idx] > 127;
-            grid[row][col] = active;
-            grid[row][4 - col] = active; // Mirror
-        }
-    }
-
-    let cell_size = size as f32 / 7.0; // 5 cells + 1 cell padding on each side
-    let offset = cell_size;
+pub fn Avatar(
+    /// Hex-encoded public key (or any unique identifier).
+    pubkey: String,
+    /// Diameter in pixels (default 44).
+    #[props(default = 44)]
+    size: u32,
+) -> Element {
+    let hash = simple_hash(&pubkey);
+    let hue = hash % 360;
+    let cells = generate_identicon(hash);
+    let cell_size = size as f64 / 5.0;
+    let ring_size = size + 6;
 
     rsx! {
-        svg {
-            width: "{size}",
-            height: "{size}",
-            view_box: "0 0 {size} {size}",
-            xmlns: "http://www.w3.org/2000/svg",
+        div {
+            style: "
+                position: relative;
+                width: {ring_size}px;
+                height: {ring_size}px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            ",
 
-            // Background circle
-            circle {
-                cx: "{size / 2}",
-                cy: "{size / 2}",
-                r: "{size / 2}",
-                fill: "{bg_color}",
+            // Gradient ring
+            div {
+                style: "
+                    position: absolute;
+                    inset: 0;
+                    border-radius: 50%;
+                    background: {gradient};
+                    opacity: 0.6;
+                ",
             }
 
-            // Grid cells
-            for row in 0..5 {
-                for col in 0..5 {
-                    if grid[row][col] {
-                        rect {
-                            key: "{row}-{col}",
-                            x: "{offset + col as f32 * cell_size}",
-                            y: "{offset + row as f32 * cell_size}",
-                            width: "{cell_size}",
-                            height: "{cell_size}",
-                            rx: "{cell_size * 0.2}",
-                            fill: "{color}",
+            // Outer glow
+            div {
+                style: "
+                    position: absolute;
+                    inset: -4px;
+                    border-radius: 50%;
+                    background: transparent;
+                    box-shadow: 0 0 16px hsla({hue}, 70%, 60%, 0.2);
+                ",
+            }
+
+            // Inner identicon circle
+            div {
+                style: "
+                    width: {size}px;
+                    height: {size}px;
+                    border-radius: 50%;
+                    background: {bg};
+                    position: relative;
+                    overflow: hidden;
+                    z-index: 1;
+                ",
+                bg = DARK.bg_secondary,
+
+                // Identicon grid
+                svg {
+                    width: "{size}",
+                    height: "{size}",
+                    view_box: "0 0 {size} {size}",
+
+                    for (i, &filled) in cells.iter().enumerate() {
+                        if filled {
+                            {
+                                let row = i / 5;
+                                let col = i % 5;
+                                let x = col as f64 * cell_size;
+                                let y = row as f64 * cell_size;
+                                let lightness = 55 + ((i * 7) % 20);
+                                rsx! {
+                                    rect {
+                                        x: "{x}",
+                                        y: "{y}",
+                                        width: "{cell_size}",
+                                        height: "{cell_size}",
+                                        fill: "hsla({hue}, 65%, {lightness}%, 0.85)",
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
     }
+}
+
+fn simple_hash(input: &str) -> u32 {
+    input.bytes().fold(5381u32, |acc, b| {
+        acc.wrapping_mul(33).wrapping_add(b as u32)
+    })
+}
+
+fn generate_identicon(hash: u32) -> [bool; 25] {
+    let mut cells = [false; 25];
+    for row in 0..5 {
+        for col in 0..3 {
+            let bit = (hash >> ((row * 3 + col) % 32)) & 1 == 1;
+            cells[row * 5 + col] = bit;
+            cells[row * 5 + (4 - col)] = bit; // mirror
+        }
+    }
+    cells
 }

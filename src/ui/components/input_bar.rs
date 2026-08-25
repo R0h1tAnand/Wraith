@@ -1,50 +1,72 @@
 use dioxus::prelude::*;
 use crate::ui::theme::DARK;
 
-/// Message input bar with send button.
+/// Message composer bar with glass surface, animated send button,
+/// and input focus glow.
 #[component]
 pub fn InputBar(
+    /// Current input value (controlled).
     value: String,
+    /// Called when the input value changes.
     on_input: EventHandler<String>,
+    /// Called when the user taps send.
     on_send: EventHandler<()>,
+    /// Called when the attachment button is tapped.
+    #[props(default)]
+    on_attach: EventHandler<()>,
 ) -> Element {
-    let can_send = !value.trim().is_empty();
-    let text_color = if can_send { "#FFFFFF" } else { DARK.text_tertiary };
-    let bg_color = if can_send { DARK.accent_primary } else { DARK.bg_tertiary };
-    let cursor_style = if can_send { "pointer" } else { "default" };
-    let transform = if can_send { "scale(1)" } else { "scale(0.9)" };
+    let has_text = !value.trim().is_empty();
+
+    let send_bg = if has_text {
+        DARK.gradient_accent
+    } else {
+        "transparent"
+    };
+
+    let send_opacity = if has_text { "1" } else { "0.3" };
 
     rsx! {
         div {
             style: "
                 display: flex;
-                align-items: center;
+                align-items: flex-end;
                 gap: 8px;
-                padding: 8px 12px;
-                padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
-                background: {DARK.bg_secondary};
-                border-top: 1px solid {DARK.border_subtle};
-                flex-shrink: 0;
+                padding: 10px 12px;
+                padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+                background: {glass_bg};
+                border-top: 1px solid {glass_border};
+                backdrop-filter: {backdrop};
+                -webkit-backdrop-filter: {backdrop};
             ",
+            glass_bg = DARK.glass_bg,
+            glass_border = DARK.glass_border,
+            backdrop = DARK.glass_backdrop,
 
-            // Attachment button (future)
+            // Attachment button
             button {
                 style: "
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
-                    background: {DARK.bg_tertiary};
-                    border: none;
-                    color: {DARK.text_secondary};
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 12px;
+                    border: 1px solid {border};
+                    background: {btn_bg};
+                    color: {text_sec};
                     font-size: 18px;
-                    cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    cursor: pointer;
+                    transition: background 150ms ease, border-color 150ms ease;
                     flex-shrink: 0;
-                    transition: all 150ms ease;
+                    backdrop-filter: {backdrop};
+                    -webkit-backdrop-filter: {backdrop};
                 ",
-                "🔗"
+                border = DARK.glass_border,
+                btn_bg = DARK.glass_bg,
+                text_sec = DARK.text_secondary,
+                backdrop = DARK.glass_backdrop,
+                onclick: move |_| on_attach.call(()),
+                "+"
             }
 
             // Text input
@@ -52,45 +74,49 @@ pub fn InputBar(
                 class: "input-field",
                 style: "
                     flex: 1;
-                    border-radius: 9999px;
-                    padding: 10px 16px;
+                    min-height: 38px;
+                    padding: 8px 14px;
+                    border-radius: 14px;
                     font-size: 15px;
+                    line-height: 1.4;
+                    letter-spacing: -0.01em;
+                    transition: border-color 200ms ease, box-shadow 200ms ease;
                 ",
-                placeholder: "Message...",
+                r#type: "text",
+                placeholder: "Message…",
                 value: "{value}",
-                oninput: move |evt| on_input.call(evt.value()),
-                onkeypress: move |evt| {
-                    if evt.key() == Key::Enter {
-                        on_send.call(());
-                    }
-                },
+                oninput: move |e| on_input.call(e.value()),
             }
 
             // Send button
             button {
                 style: "
-                    width: 40px;
-                    height: 40px;
+                    width: 38px;
+                    height: 38px;
                     border-radius: 50%;
-                    background: {bg_color};
                     border: none;
-                    color: {text_color};
+                    background: {send_bg};
+                    color: {on_accent};
                     font-size: 16px;
-                    cursor: {cursor_style};
+                    font-weight: 700;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    cursor: pointer;
+                    opacity: {send_opacity};
+                    transition: opacity 200ms ease, transform 150ms ease, box-shadow 200ms ease;
                     flex-shrink: 0;
-                    transition: all 150ms ease;
-                    transform: {transform};
+                    box-shadow: {glow};
                 ",
-                disabled: !can_send,
+                on_accent = DARK.text_on_accent,
+                glow = if has_text { DARK.shadow_glow_accent } else { "none" },
+                disabled: !has_text,
                 onclick: move |_| {
-                    if can_send {
+                    if has_text {
                         on_send.call(());
                     }
                 },
-                "Send"
+                "↑"
             }
         }
     }

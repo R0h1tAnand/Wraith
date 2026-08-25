@@ -30,12 +30,15 @@ pub fn Chat(contact_id: String) -> Element {
                         width: 100%;
                         height: 100vh;
                         display: flex;
+                        flex-direction: column;
                         align-items: center;
                         justify-content: center;
                         background: {DARK.bg_primary};
                         color: {DARK.text_secondary};
+                        gap: 12px;
                     ",
-                    "Contact not found"
+                    div { style: "font-size: 48px; opacity: 0.5;", "🔍" }
+                    span { style: "font-size: 15px;", "Contact not found" }
                 }
             };
         }
@@ -61,31 +64,40 @@ pub fn Chat(contact_id: String) -> Element {
                 display: flex;
                 flex-direction: column;
                 background: {DARK.bg_primary};
+                position: relative;
             ",
 
             // ─── Header ─────────────────────────
             div {
                 style: "
-                    height: 60px;
+                    height: 64px;
                     display: flex;
                     align-items: center;
                     gap: 12px;
                     padding: 0 16px;
-                    border-bottom: 1px solid {DARK.border_subtle};
+                    background: {DARK.glass_bg};
+                    backdrop-filter: blur(24px);
+                    -webkit-backdrop-filter: blur(24px);
+                    border-bottom: 1px solid {DARK.glass_border};
                     flex-shrink: 0;
+                    z-index: 10;
                 ",
 
                 // Back button
                 button {
                     style: "
-                        background: none;
-                        border: none;
-                        color: {DARK.text_primary};
-                        font-size: 20px;
-                        cursor: pointer;
-                        padding: 8px;
+                        width: 36px;
+                        height: 36px;
                         border-radius: 12px;
-                        transition: background 150ms ease;
+                        background: {DARK.bg_tertiary};
+                        border: 1px solid {DARK.border_subtle};
+                        color: {DARK.text_primary};
+                        font-size: 18px;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: all 200ms cubic-bezier(.22,1,.36,1);
                     ",
                     onclick: move |_| { nav.push(Route::Home {}); },
                     "←"
@@ -96,13 +108,16 @@ pub fn Chat(contact_id: String) -> Element {
 
                 // Name + status
                 div {
-                    style: "flex: 1;",
+                    style: "flex: 1; min-width: 0;",
 
                     div {
                         style: "
                             font-size: 16px;
-                            font-weight: 600;
+                            font-weight: 700;
                             color: {DARK.text_primary};
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
                         ",
                         "{display_name}"
                     }
@@ -113,30 +128,37 @@ pub fn Chat(contact_id: String) -> Element {
                             color: {DARK.accent_green};
                             display: flex;
                             align-items: center;
-                            gap: 4px;
+                            gap: 5px;
                         ",
                         span {
                             style: "
-                                width: 6px;
-                                height: 6px;
+                                width: 7px;
+                                height: 7px;
                                 border-radius: 50%;
                                 background: {DARK.accent_green};
                                 display: inline-block;
+                                box-shadow: 0 0 8px {DARK.accent_green}88;
                             ",
                         }
-                        "Connected"
+                        "Encrypted"
                     }
                 }
 
                 // Menu button
                 button {
                     style: "
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 12px;
                         background: none;
-                        border: none;
+                        border: 1px solid transparent;
                         color: {DARK.text_secondary};
                         font-size: 18px;
                         cursor: pointer;
-                        padding: 8px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: all 200ms ease;
                     ",
                     "⋮"
                 }
@@ -154,6 +176,7 @@ pub fn Chat(contact_id: String) -> Element {
                 ",
 
                 if messages.is_empty() {
+                    // ─── Empty Chat State ─────────
                     div {
                         style: "
                             flex: 1;
@@ -161,37 +184,48 @@ pub fn Chat(contact_id: String) -> Element {
                             flex-direction: column;
                             align-items: center;
                             justify-content: center;
-                            gap: 8px;
+                            gap: 12px;
+                            animation: {presets::fade_in_up()};
                         ",
+
+                        // Lock icon with glass backing
                         div {
                             style: "
-                                width: 48px;
-                                height: 48px;
+                                width: 56px;
+                                height: 56px;
                                 border-radius: 50%;
-                                background: {DARK.bg_tertiary};
+                                background: {DARK.glass_bg};
+                                backdrop-filter: blur(12px);
+                                -webkit-backdrop-filter: blur(12px);
+                                border: 1px solid {DARK.glass_border};
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
                                 font-size: 24px;
-                                margin-bottom: 8px;
+                                margin-bottom: 4px;
+                                box-shadow: {DARK.shadow_md};
                             ",
                             "🔒"
                         }
+
                         p {
                             style: "
-                                font-size: 14px;
-                                color: {DARK.text_secondary};
+                                font-size: 15px;
+                                font-weight: 600;
+                                color: {DARK.text_primary};
                                 text-align: center;
                             ",
-                            "Messages are end-to-end encrypted."
+                            "End-to-end encrypted"
                         }
                         p {
                             style: "
                                 font-size: 13px;
                                 color: {DARK.text_tertiary};
                                 text-align: center;
+                                max-width: 240px;
+                                line-height: 1.5;
                             ",
-                            "Send a message to start the conversation."
+                            "Send a message to start the conversation. Only you and this contact can read them."
                         }
                     }
                 } else {

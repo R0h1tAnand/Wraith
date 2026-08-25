@@ -10,26 +10,27 @@ pub enum ToastKind {
 }
 
 impl ToastKind {
-    pub fn color(&self) -> &'static str {
+    /// Gradient background for the kind.
+    pub fn gradient(&self) -> &'static str {
         match self {
-            ToastKind::Success => "#4ADE80",
-            ToastKind::Error => "#F87171",
-            ToastKind::Info => "#7C6AF7",
+            ToastKind::Success => DARK.gradient_success,
+            ToastKind::Error   => DARK.gradient_error,
+            ToastKind::Info    => DARK.gradient_accent,
         }
     }
 
     pub fn icon(&self) -> &'static str {
         match self {
             ToastKind::Success => "✓",
-            ToastKind::Error => "✕",
-            ToastKind::Info => "ℹ",
+            ToastKind::Error   => "✕",
+            ToastKind::Info    => "ℹ",
         }
     }
 }
 
-/// Toast notification component.
+/// Glassmorphic toast notification with gradient accent stripe.
 ///
-/// Slides in from top and auto-dismisses.
+/// Slides in from top with a soft entrance.
 #[component]
 pub fn Toast(
     message: String,
@@ -40,16 +41,14 @@ pub fn Toast(
         return rsx! {};
     }
 
-    let color = kind.color();
+    let gradient = kind.gradient();
     let icon = kind.icon();
-    let bg_alpha = "1A"; // ~10% opacity
-    let bg = format!("{}{}", color, bg_alpha);
 
     rsx! {
         div {
             style: "
                 position: fixed;
-                top: 16px;
+                top: max(16px, env(safe-area-inset-top, 16px));
                 left: 16px;
                 right: 16px;
                 z-index: 300;
@@ -64,27 +63,49 @@ pub fn Toast(
                     align-items: center;
                     gap: 10px;
                     padding: 12px 20px;
-                    background: {DARK.bg_secondary};
-                    border: 1px solid {color}33;
+                    background: {glass_bg};
+                    border: 1px solid {glass_border};
                     border-radius: 16px;
-                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                    backdrop-filter: {backdrop};
+                    -webkit-backdrop-filter: {backdrop};
+                    box-shadow: {shadow};
+                    max-width: 400px;
+                    overflow: hidden;
+                    position: relative;
                 ",
+                glass_bg = DARK.glass_bg,
+                glass_border = DARK.glass_border,
+                backdrop = DARK.glass_backdrop,
+                shadow = DARK.shadow_elevated,
 
-                // Icon
+                // Left accent stripe
                 div {
                     style: "
-                        width: 24px;
-                        height: 24px;
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        bottom: 0;
+                        width: 3px;
+                        background: {gradient};
+                    ",
+                }
+
+                // Icon badge
+                div {
+                    style: "
+                        width: 26px;
+                        height: 26px;
                         border-radius: 50%;
-                        background: {bg};
+                        background: {gradient};
                         display: flex;
                         align-items: center;
                         justify-content: center;
                         font-size: 12px;
                         font-weight: 700;
-                        color: {color};
+                        color: {on_accent};
                         flex-shrink: 0;
                     ",
+                    on_accent = DARK.text_on_accent,
                     "{icon}"
                 }
 
@@ -92,8 +113,9 @@ pub fn Toast(
                     style: "
                         font-size: 14px;
                         font-weight: 500;
-                        color: {DARK.text_primary};
+                        color: {text_pri};
                     ",
+                    text_pri = DARK.text_primary,
                     "{message}"
                 }
             }

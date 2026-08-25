@@ -1,100 +1,152 @@
 use dioxus::prelude::*;
-use crate::core::types::MessageStatus;
 use crate::ui::theme::DARK;
 use crate::ui::animations::presets;
 
-/// Individual message bubble.
+/// Message delivery status.
+#[derive(Clone, PartialEq)]
+pub enum MessageStatus {
+    Sending,
+    Sent,
+    Delivered,
+    Read,
+    Failed,
+}
+
+/// Whether this bubble was sent by the local user or received.
+#[derive(Clone, PartialEq)]
+pub enum BubbleDirection {
+    Sent,
+    Received,
+}
+
+/// A single chat message bubble.
+///
+/// Sent messages use an accent gradient fill.
+/// Received messages use a frosted glass surface.
 #[component]
 pub fn MessageBubble(
-    content: String,
-    timestamp: String,
-    is_sent: bool,
+    /// The message text.
+    text: String,
+    /// Time string (e.g. "14:32").
+    time: String,
+    /// Direction of the message.
+    direction: BubbleDirection,
+    /// Delivery status (only relevant for sent).
+    #[props(default = MessageStatus::Sent)]
     status: MessageStatus,
+    /// Position for stagger animation.
+    #[props(default = 0)]
     index: u32,
 ) -> Element {
-    let (bg, align, radius) = if is_sent {
-        (DARK.accent_primary, "flex-end", "20px 20px 4px 20px")
+    let is_sent = direction == BubbleDirection::Sent;
+    let anim = presets::stagger(index, 20);
+
+    let (bg, border, text_color, align, radius) = if is_sent {
+        (
+            DARK.gradient_accent,
+            "transparent",
+            DARK.text_on_accent,
+            "flex-end",
+            "20px 20px 6px 20px",
+        )
     } else {
-        (DARK.bg_tertiary, "flex-start", "20px 20px 20px 4px")
+        (
+            DARK.glass_bg_heavy.to_string().leak() as &'static str,
+            DARK.glass_border,
+            DARK.text_primary,
+            "flex-start",
+            "20px 20px 20px 6px",
+        )
     };
 
-    let text_color = if is_sent { "#FFFFFF" } else { DARK.text_primary };
-
-    let status_icon = match status {
-        MessageStatus::Sending => "◌",
-        MessageStatus::Sent => "✓",
-        MessageStatus::Delivered => "✓✓",
-        MessageStatus::Read => "✓✓",
-        MessageStatus::Failed => "✕",
+    let shadow = if is_sent {
+        "0 4px 16px rgba(124, 106, 247, 0.2)"
+    } else {
+        DARK.shadow_soft
     };
 
-    let status_color = match status {
-        MessageStatus::Read => DARK.accent_primary,
-        MessageStatus::Failed => DARK.accent_red,
-        _ => if is_sent { "rgba(255,255,255,0.5)" } else { DARK.text_tertiary },
-    };
-
-    let ts_color = if is_sent { "rgba(255,255,255,0.5)" } else { DARK.text_tertiary };
-    let delay = index * 30;
+    let backdrop = if is_sent { "none" } else { DARK.glass_backdrop };
 
     rsx! {
         div {
             style: "
                 display: flex;
                 justify-content: {align};
-                padding: 2px 0;
-                animation: {presets::fade_in_up_delayed(delay)};
+                padding: 2px 16px;
+                animation: {anim};
             ",
 
             div {
                 style: "
-                    max-width: 75%;
-                    background: {bg};
+                    max-width: 78%;
+                    padding: 10px 14px 8px;
                     border-radius: {radius};
-                    padding: 10px 14px;
-                    position: relative;
+                    background: {bg};
+                    border: 1px solid {border};
+                    box-shadow: {shadow};
+                    backdrop-filter: {backdrop};
+                    -webkit-backdrop-filter: {backdrop};
                 ",
 
-                // Message content
+                // Message text
                 p {
                     style: "
-                        font-size: 15px;
+                        font-size: 14.5px;
+                        line-height: 1.45;
                         color: {text_color};
-                        line-height: 1.4;
-                        word-break: break-word;
+                        word-wrap: break-word;
+                        letter-spacing: -0.01em;
                     ",
-                    "{content}"
+                    "{text}"
                 }
 
-                // Timestamp + status
+                // Footer: time + status
                 div {
                     style: "
                         display: flex;
                         align-items: center;
                         justify-content: flex-end;
-                        gap: 4px;
+                        gap: 5px;
                         margin-top: 4px;
                     ",
 
                     span {
                         style: "
                             font-size: 11px;
-                            color: {ts_color};
+                            color: {time_color};
+                            opacity: 0.7;
                         ",
-                        "{timestamp}"
+                        time_color = if is_sent { DARK.text_on_accent } else { DARK.text_tertiary },
+                        "{time}"
                     }
 
                     if is_sent {
-                        span {
-                            style: "
-                                font-size: 11px;
-                                color: {status_color};
-                            ",
-                            "{status_icon}"
-                        }
+                        { render_status(&status) }
                     }
                 }
             }
+        }
+    }
+}
+
+fn render_status(status: &MessageStatus) -> Element {
+    let (icon, color) = match status {
+        MessageStatus::Sending  => ("↑", "rgba(255,255,255,0.4)"),
+        MessageStatus::Sent     => ("✓", "rgba(255,255,255,0.6)"),
+        MessageStatus::Delivered => ("✓✓", "rgba(255,255,255,0.7)"),
+        MessageStatus::Read     => ("✓✓", DARK.accent_cyan),
+        MessageStatus::Failed   => ("✕", DARK.accent_red),
+    };
+
+    rsx! {
+        span {
+            style: "
+                font-size: 11px;
+                color: {color};
+                font-weight: 600;
+                letter-spacing: -1px;
+            ",
+            "{icon}"
         }
     }
 }

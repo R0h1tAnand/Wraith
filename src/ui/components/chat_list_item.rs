@@ -1,129 +1,149 @@
 use dioxus::prelude::*;
-use crate::core::types::Contact;
 use crate::ui::theme::DARK;
 use crate::ui::animations::presets;
 use crate::ui::components::avatar::Avatar;
 
-/// A single row in the chat list.
+/// A single conversation row in the chat list.
+///
+/// Glass card surface with gradient unread badge and smooth stagger animation.
 #[component]
 pub fn ChatListItem(
-    contact: Contact,
-    delay_ms: u32,
+    /// Display name of the contact.
+    name: String,
+    /// Last message preview text.
+    last_message: String,
+    /// Timestamp or relative time string (e.g. "2m ago").
+    time: String,
+    /// Number of unread messages (0 = no badge).
+    #[props(default = 0)]
+    unread: u32,
+    /// Public key for avatar generation.
+    #[props(default = String::new())]
+    pubkey: String,
+    /// Position in the list for stagger animation.
+    #[props(default = 0)]
+    index: u32,
+    /// Tap handler.
+    #[props(default)]
     on_click: EventHandler<()>,
 ) -> Element {
-    let display_name = contact
-        .nickname
-        .as_deref()
-        .unwrap_or_else(|| {
-            if contact.public_key.len() > 12 {
-                // Will show truncated key
-                "Unknown"
-            } else {
-                &contact.public_key
-            }
-        });
-
-    let preview = contact
-        .last_message_preview
-        .as_deref()
-        .unwrap_or("No messages yet");
-
-    let time_str = contact
-        .last_message_time
-        .map(|t| t.format("%H:%M").to_string())
-        .unwrap_or_default();
+    let anim = presets::stagger(index, 40);
+    let key = if pubkey.is_empty() { name.clone() } else { pubkey };
 
     rsx! {
         div {
             style: "
                 display: flex;
                 align-items: center;
-                gap: 12px;
-                padding: 12px 16px;
+                gap: 14px;
+                padding: 14px 16px;
+                margin: 0 12px 4px;
+                border-radius: 16px;
+                background: {glass_bg};
+                border: 1px solid {glass_border};
+                backdrop-filter: {backdrop};
+                -webkit-backdrop-filter: {backdrop};
                 cursor: pointer;
-                transition: background 150ms ease;
-                animation: {presets::fade_in_up_delayed(delay_ms)};
+                transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+                animation: {anim};
+                -webkit-tap-highlight-color: transparent;
             ",
-            // Hover effect via onmouseenter is not great in Dioxus,
-            // so we rely on the CSS transition for visual feedback
+            glass_bg = DARK.glass_bg,
+            glass_border = DARK.glass_border,
+            backdrop = DARK.glass_backdrop,
             onclick: move |_| on_click.call(()),
 
             // Avatar
-            Avatar { pubkey: contact.public_key.clone(), size: 52 }
+            Avatar { pubkey: key, size: 46 }
 
-            // Text content
+            // Content area
             div {
-                style: "flex: 1; min-width: 0; overflow: hidden;",
+                style: "
+                    flex: 1;
+                    min-width: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                ",
 
+                // Top row: name + time
                 div {
                     style: "
                         display: flex;
-                        align-items: center;
                         justify-content: space-between;
-                        margin-bottom: 4px;
+                        align-items: baseline;
                     ",
 
                     span {
                         style: "
                             font-size: 15px;
                             font-weight: 600;
-                            color: {DARK.text_primary};
+                            color: {text};
+                            letter-spacing: -0.02em;
                             overflow: hidden;
                             text-overflow: ellipsis;
                             white-space: nowrap;
                         ",
-                        "{display_name}"
+                        text = DARK.text_primary,
+                        "{name}"
                     }
 
                     span {
                         style: "
                             font-size: 12px;
-                            color: {DARK.text_tertiary};
+                            color: {text_tert};
                             flex-shrink: 0;
                             margin-left: 8px;
                         ",
-                        "{time_str}"
+                        text_tert = DARK.text_tertiary,
+                        "{time}"
                     }
                 }
 
+                // Bottom row: preview + badge
                 div {
                     style: "
                         display: flex;
-                        align-items: center;
                         justify-content: space-between;
+                        align-items: center;
                     ",
 
-                    p {
+                    span {
                         style: "
-                            font-size: 14px;
-                            color: {DARK.text_secondary};
+                            font-size: 13px;
+                            color: {text_sec};
                             overflow: hidden;
                             text-overflow: ellipsis;
                             white-space: nowrap;
                             flex: 1;
+                            line-height: 1.4;
                         ",
-                        "{preview}"
+                        text_sec = DARK.text_secondary,
+                        "{last_message}"
                     }
 
-                    // Unread badge
-                    if contact.unread_count > 0 {
+                    if unread > 0 {
                         div {
                             style: "
                                 min-width: 20px;
                                 height: 20px;
+                                padding: 0 6px;
                                 border-radius: 10px;
-                                background: {DARK.accent_primary};
-                                color: white;
-                                font-size: 11px;
-                                font-weight: 700;
+                                background: {gradient};
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
-                                padding: 0 6px;
+                                font-size: 11px;
+                                font-weight: 700;
+                                color: {on_accent};
                                 margin-left: 8px;
+                                box-shadow: {glow};
                                 flex-shrink: 0;
                             ",
-                            "{contact.unread_count}"
+                            gradient = DARK.gradient_accent,
+                            on_accent = DARK.text_on_accent,
+                            glow = DARK.shadow_glow_accent,
+                            "{unread}"
                         }
                     }
                 }
